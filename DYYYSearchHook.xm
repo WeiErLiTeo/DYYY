@@ -1,28 +1,35 @@
 #import <UIKit/UIKit.h>
-#import "AwemeHeaders.h" // 确保包含所有类定义
+#import "AwemeHeaders.h"
+#import "DYYYSettingsHelper.h"
 
-// 显式声明目标容器类，方便编译器识别
-@interface SearchDynamicContainerView : UIView 
+// 声明新的目标控制器
+@interface FHSViewController : UIViewController 
 @end
 
-%hook SearchDynamicContainerView
+%hook FHSViewController
 
-- (void)layoutSubviews {
-    %orig; // 先执行 App 原始的布局，确保所有子视图都在位
+// Hook viewDidLayoutSubviews 或 viewDidAppear
+- (void)viewDidLayoutSubviews { 
+    %orig;
 
-    // 检查设置开关是否打开
     if (DYYYGetBool(@"DYYYHideSearchSuggestCard")) {
-        // 遍历所有子视图
-        for (UIView *subview in self.subviews) { 
-            // 保持类名判断
+        // 遍历 FHSViewController 的视图
+        for (UIView *subview in self.view.subviews) { 
+            
+            // 检查类名是否是目标容器 UILynxView
             if ([subview isKindOfClass:NSClassFromString(@"UILynxView")]) {
+                
                 CGFloat y = CGRectGetMinY(subview.frame);
                 CGFloat height = CGRectGetHeight(subview.frame);
 
-                // 保持宽松的坐标判断（如果不想完全移除坐标判断，可以保留此段）
-                if (y >= 130.0 && y <= 200.0 && height >= 150.0 && height <= 250.0) {
-                    [subview setHidden:YES];
-                    // return; // 找到就退出
+                // 保持宽泛的坐标判断（防止误伤）
+                if (y < 250.0 && height > 150.0) {
+                    
+                    // 找到了！强制将其从父视图中移除（最彻底的操作）
+                    [subview removeFromSuperview];
+                    
+                    // 立即返回
+                    return; 
                 }
             }
         }
