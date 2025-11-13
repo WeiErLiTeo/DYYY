@@ -1,39 +1,28 @@
 #import <UIKit/UIKit.h>
 #import "AwemeHeaders.h"
-#import "DYYYSettingsHelper.h"
 
-// 声明新的目标控制器
-@interface FHSViewController : UIViewController 
-@end
+// Hook NSObject，这是所有类的基类
+%hook NSObject
 
-%hook FHSViewController
+// 拦截所有类的 initWithDictionary: 方法
+- (id)initWithDictionary:(id)arg1 {
+    
+    id instance = %orig;
 
-// Hook viewDidLayoutSubviews 或 viewDidAppear
-- (void)viewDidLayoutSubviews { 
-    %orig;
-
-    if (DYYYGetBool(@"DYYYHideSearchSuggestCard")) {
-        // 遍历 FHSViewController 的视图
-        for (UIView *subview in self.view.subviews) { 
+    // 检查是否是搜索建议的数据模型（通过关键文本判断）
+    if ([NSStringFromClass([instance class]) containsString:@"Model"]) {
+        
+        // 尝试从字典中提取关键数据
+        if ([arg1 objectForKey:@"title"] && [[arg1 objectForKey:@"title"] containsString:@"猜你想搜"]) {
             
-            // 检查类名是否是目标容器 UILynxView
-            if ([subview isKindOfClass:NSClassFromString(@"UILynxView")]) {
-                
-                CGFloat y = CGRectGetMinY(subview.frame);
-                CGFloat height = CGRectGetHeight(subview.frame);
-
-                // 保持宽泛的坐标判断（防止误伤）
-                if (y < 250.0 && height > 150.0) {
-                    
-                    // 找到了！强制将其从父视图中移除（最彻底的操作）
-                    [subview removeFromSuperview];
-                    
-                    // 立即返回
-                    return; 
-                }
-            }
+            // 找到了嫌疑目标！打印类名和数据
+            NSLog(@"[DYYY_DATA_FOUND] 目标数据模型类名: %@", NSStringFromClass([instance class]));
+            
+            // 返回 nil 或空对象，阻止卡片数据创建
+            // return nil; // <-- 这是最终的隐藏操作，但先用来侦察
         }
     }
+    return instance;
 }
 
 %end
